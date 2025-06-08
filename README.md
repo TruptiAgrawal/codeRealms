@@ -1,4 +1,4 @@
-# 🎮 GameDev Learning Platform
+# 🎮 GameDev Learning Platform - CODEREALMS
 
 A gamified learning platform that transforms coding education into an engaging RPG-like experience. 
 Built with Streamlit, this platform helps developers level up their skills through quests, achievements, and interactive challenges.
