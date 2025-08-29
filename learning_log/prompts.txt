@@ -1,0 +1,11 @@
+look into @README.md and analyze the document. Provide me an in depth understanding
+of the project, concluding it with a detailed summary of it.    
+-- 
+store it in @docs/01_summary.txt    
+---
+based on @docs/01_summary.txt citique it in as much depth as possible and then 
+also mention in depth improvements that can be done on it. make it as much as 
+detailed as possible.
+----
+store it in @docs/02_critique_and_Improvements.txt  
+----
