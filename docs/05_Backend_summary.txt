@@ -1,0 +1,56 @@
+### Overall Architecture
+
+The backend is a Node.js application built with the **Express.js** framework. It serves a RESTful API for a gamified coding platform. The architecture follows a standard layered pattern, separating concerns into routes, controllers, models, and middleware. It uses **MongoDB** as its database, with **Mongoose** as the Object Data Modeling (ODM) library to define data schemas and interact with the database.
+
+---
+
+### Directory & File Breakdown
+
+#### 1. `server.js` (The Entry Point)
+This is the heart of the backend application. Its primary responsibilities are:
+*   **Initialization**: It initializes the Express app.
+*   **Environment Variables**: It uses the `dotenv` package to load sensitive configurations (like database connection strings and JWT secrets) from a `.env` file.
+*   **Middleware**: It sets up crucial middleware:
+    *   `cors()`: Allows the frontend (running on a different domain/port) to make requests to this backend.
+    *   `express.json()`: Parses incoming JSON request bodies.
+*   **Database Connection**: It connects to the MongoDB Atlas database using Mongoose.
+*   **Routing**: It imports the route handlers from the `routes/` directory and mounts them on specific API paths (`/api/auth` and `/api/users`).
+*   **Server Start**: It starts the server, making it listen for incoming HTTP requests on the specified `PORT`.
+*   **Error Handling**: It includes basic middleware for handling server errors and 404 "Not Found" routes.
+
+#### 2. `routes/` (API Endpoints)
+This directory defines the API endpoints and maps them to specific logic.
+*   **`auth.js`**: Handles all authentication-related endpoints.
+    *   `POST /api/auth/register`: Manages new user registration. It hashes passwords using `bcryptjs` before saving a new user to the database via the `User` model. Upon success, it generates a **JSON Web Token (JWT)**.
+    *   `POST /api/auth/login`: Manages user login. It validates credentials against the database and, if successful, generates a new JWT. It also interacts with the `gameController` to update the user's login streak.
+*   **`users.js`**: Handles endpoints related to user data and interactions.
+    *   `GET /api/users/profile`: Fetches the profile of the currently authenticated user. This route is protected by the `authenticate` middleware.
+    *   `PUT /api/users/profile`: Allows an authenticated user to update their profile (e.g., avatar, theme).
+    *   `GET /api/users/leaderboard`: A public endpoint to fetch the top users, sorted by their experience points (XP).
+
+#### 3. `models/` (Data Schemas)
+This directory defines the structure of the data stored in MongoDB.
+*   **`User.js`**: Defines the schema for a user. This is the most central model, containing fields for credentials (`email`, `password`), profile information (`username`, `avatar`), and gamification stats (`xp`, `level`, `streak`, `achievements`). It also holds a reference to `completedQuests`.
+*   **`Quest.js`**: Defines the schema for a coding challenge. It includes the quest's content (`title`, `description`, `codeTemplate`), rules (`difficulty`, `testCases`), and rewards (`xpReward`).
+*   **`Submission.js`**: Defines the schema for a user's attempt to solve a quest. It links a `User` to a `Quest` and stores the submitted `code`, its `status` (e.g., 'accepted', 'wrong-answer'), and test results.
+
+#### 4. `middleware/` (Request Handling Logic)
+*   **`auth.js`**: Contains the `authenticate` function, which is a critical piece of security middleware. It protects routes by verifying the JWT sent in the `Authorization` header of a request. If the token is valid, it decodes the user's ID, fetches the user from the database, and attaches the user object to the request (`req.user`) for use in the protected route.
+
+#### 5. `controllers/` (Business Logic)
+*   **`gameController.js`**: This file centralizes the application's core "gamification" logic. It's designed as a utility class with static methods that are called from the routes.
+    *   **`calculateLevel`**: Determines a user's level based on their total XP.
+    *   **`updateStreak`**: Manages the user's daily login streak.
+    *   **`checkAchievements`**: Awards achievements based on user progress.
+
+#### 6. `package.json` & `package-lock.json`
+*   These files manage the project's dependencies and scripts. Key dependencies include `express`, `mongoose`, `bcryptjs` for password hashing, `jsonwebtoken` for authentication, and `nodemon` for automatically restarting the server during development.
+
+### How They Connect: A Typical Flow (Get User Profile)
+1.  A user logs in, and the frontend receives a JWT.
+2.  The frontend makes a `GET` request to `/api/users/profile`, including the token in the `Authorization: Bearer <token>` header.
+3.  The Express server routes this request to the `users.js` file.
+4.  Before the main route logic is executed, the `authenticate` middleware from `middleware/auth.js` runs. It verifies the JWT and attaches the corresponding user's data to the request object.
+5.  The route handler in `users.js` then executes. It uses the `User` model to fetch the full, up-to-date profile from the database.
+6.  It calls `GameController.calculateLevel()` to get detailed level information based on the user's current XP.
+7.  Finally, it sends a JSON response containing the combined user profile and level data back to the frontend.
