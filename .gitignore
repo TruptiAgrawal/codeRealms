@@ -1,3 +1,8 @@
-docs/03_Implementation_Plan.txt
 docs/04_mongodb_details.txt 
-coderealms/backend/
+coderealms/backend/node_modules
+coderealms/backend/controllers
+coderealms/backend/middleware
+coderealms/backend/package-lock.json
+coderealms/backend/packag.json
+coderealms/backend/seeder.js 
+coderealms/backend/test.http
