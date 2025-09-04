@@ -6,3 +6,5 @@ coderealms/backend/package-lock.json
 coderealms/backend/packag.json
 coderealms/backend/seeder.js 
 coderealms/backend/test.http
+coderealms/backend/.env 
+coderealms/backend
