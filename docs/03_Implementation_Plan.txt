@@ -1,0 +1,1778 @@
+# CodeRealms: Stage-by-Stage Implementation Guide
+
+## Stage 1: Environment Setup & Project Foundation
+
+### Step 1.1: Create Project Structure
+1. Open VS Code
+2. Create a new folder called `coderealms` on your desktop
+3. Open this folder in VS Code (File → Open Folder)
+4. Create the following folder structure:
+   ```
+   coderealms/
+   ├── backend/
+   ├── frontend/
+   ├── config/
+   └── docs/
+   ```
+### Step 1.2: Install Required VS Code Extensions
+1. Go to Extensions panel (Ctrl+Shift+X)
+2. Search and install these extensions:
+   - **Live Server** (by Ritwick Dey)
+   - **MongoDB for VS Code** (by MongoDB)
+   - **REST Client** (by Huachao Mao)
+   - **Auto Rename Tag** (by Jun Han)
+   - **Prettier** (by Prettier)
+### Step 1.3: Install Node.js
+1. Go to https://nodejs.org/
+2. Download and install the LTS version
+3. Verify installation by opening VS Code terminal (Ctrl+Shift+`)
+4. Type: `node --version` and `npm --version`
+5. Both should show version numbers
+
+## Stage 2: Database Setup (MongoDB Atlas)
+### Step 2.1: Create MongoDB Atlas Account
+1. Go to https://www.mongodb.com/atlas
+2. Click "Try Free"
+3. Sign up with your email
+4. Choose "Build a database"
+5. Select "FREE" shared cluster
+6. Choose your preferred cloud provider and region
+7. Create cluster (this takes 3-5 minutes)
+### Step 2.2: Configure Database Access
+1. Click "Database Access" in left sidebar
+2. Click "Add New Database User"
+3. Choose "Password" authentication
+4. Create username and password (save these!) - TruptiAgrawal Krishna123!@#
+5. Set user privileges to "Read and write to any database" - Atlas Admin 
+6. Click "Add User" 
+### Step 2.3: Setup Network Access
+1. Click "Network Access" in left sidebar
+2. Click "Add IP Address"
+3. Click "Allow Access from Anywhere" (for development)
+4. Click "Confirm"
+### Step 2.4: Get Connection String
+1. Go back to "Database" in sidebar
+2. Click "Connect" on your cluster
+3. Choose "Connect your application"
+4. Copy the connection string
+5. Save it in a notepad (you'll need this later)
+
+
+## Stage 3: Backend Development Setup
+### Step 3.1: Initialize Backend Project
+1. Open terminal in VS Code (Ctrl+Shift+`)
+2. Navigate to backend folder: `cd backend`
+3. Initialize project: `npm init -y`
+4. This creates a `package.json` file
+
+### Step 3.2: Install Backend Dependencies
+In the terminal, run these commands one by one:
+```bash
+npm install express
+npm install mongoose
+npm install jsonwebtoken
+npm install bcryptjs
+npm install cors
+npm install dotenv
+npm install nodemon --save-dev
+```
+
+### Step 3.3: Create Environment Variables
+1. In the `backend` folder, create a file called `.env`
+2. Add this content (replace with your actual MongoDB connection string):
+   ```
+   MONGODB_URI=mongodb+srv://yourusername:yourpassword@cluster0.xxxxx.mongodb.net/coderealms
+   JWT_SECRET=your_super_secret_key_here_make_it_long_and_random
+   PORT=3000
+   ```
+
+### Step 3.4: Update package.json Scripts
+1. Open `backend/package.json`
+2. Replace the "scripts" section with:
+   ```json
+   "scripts": {
+     "start": "node server.js",
+     "dev": "nodemon server.js",
+     "test": "echo \"Error: no test specified\" && exit 1"
+   }
+   ```
+
+## Stage 4: Database Models Creation
+
+### Step 4.1: Create Models Folder Structure
+In the `backend` folder, create:
+```
+backend/
+├── models/
+├── routes/
+├── controllers/
+├── middleware/
+└── utils/
+```
+
+### Step 4.2: Create User Model
+1. Create `backend/models/User.js`
+2. Add this complete code:
+```javascript
+const mongoose = require('mongoose');
+
+const userSchema = new mongoose.Schema({
+  username: {
+    type: String,
+    required: true,
+    unique: true,
+    trim: true,
+    minlength: 3,
+    maxlength: 20
+  },
+  email: {
+    type: String,
+    required: true,
+    unique: true,
+    lowercase: true
+  },
+  password: {
+    type: String,
+    required: true,
+    minlength: 6
+  },
+  xp: {
+    type: Number,
+    default: 0
+  },
+  level: {
+    type: Number,
+    default: 1
+  },
+  avatar: {
+    type: String,
+    enum: ['warrior', 'mage', 'hacker', 'rogue', 'scientist', 'ai-engineer'],
+    default: 'warrior'
+  },
+  theme: {
+    type: String,
+    enum: ['dark', 'light', 'cyberpunk', 'forest', 'ocean', 'sunset'],
+    default: 'dark'
+  },
+  streak: {
+    type: Number,
+    default: 0
+  },
+  lastLogin: {
+    type: Date,
+    default: Date.now
+  },
+  achievements: [{
+    type: String
+  }],
+  completedQuests: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Quest'
+  }],
+  joinDate: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+module.exports = mongoose.model('User', userSchema);
+```
+
+### Step 4.3: Create Quest Model
+1. Create `backend/models/Quest.js`
+2. Add this code:
+```javascript
+const mongoose = require('mongoose');
+
+const questSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  difficulty: {
+    type: String,
+    enum: ['easy', 'medium', 'hard'],
+    required: true
+  },
+  category: {
+    type: String,
+    default: 'DSA'
+  },
+  codeTemplate: {
+    type: String,
+    required: true
+  },
+  testCases: [{
+    input: {
+      type: String,
+      required: true
+    },
+    expectedOutput: {
+      type: String,
+      required: true
+    },
+    isHidden: {
+      type: Boolean,
+      default: false
+    }
+  }],
+  xpReward: {
+    type: Number,
+    required: true
+  },
+  hints: [{
+    type: String
+  }],
+  solution: {
+    type: String
+  },
+  tags: [{
+    type: String
+  }],
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+module.exports = mongoose.model('Quest', questSchema);
+```
+
+### Step 4.4: Create Submission Model
+1. Create `backend/models/Submission.js`
+2. Add this code:
+```javascript
+const mongoose = require('mongoose');
+
+const submissionSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  quest: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Quest',
+    required: true
+  },
+  code: {
+    type: String,
+    required: true
+  },
+  language: {
+    type: String,
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'accepted', 'wrong-answer', 'runtime-error', 'time-limit', 'compile-error'],
+    default: 'pending'
+  },
+  testResults: [{
+    input: String,
+    expectedOutput: String,
+    actualOutput: String,
+    passed: Boolean,
+    executionTime: Number
+  }],
+  submittedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+module.exports = mongoose.model('Submission', submissionSchema);
+```
+
+## Stage 5: Core Game Logic Implementation
+
+### Step 5.1: Create Game Controller
+1. Create `backend/controllers/gameController.js`
+2. Add this code:
+```javascript
+class GameController {
+  // XP calculation based on difficulty
+  static calculateXP(difficulty) {
+    const xpRewards = {
+      easy: 10,
+      medium: 25,
+      hard: 50
+    };
+    return xpRewards[difficulty] || 10;
+  }
+
+  // Calculate level based on total XP
+  static calculateLevel(totalXP) {
+    const levelThresholds = [0, 100, 250, 500, 1000, 2000, 3500, 5500, 8000, 12000];
+    
+    for (let i = levelThresholds.length - 1; i >= 0; i--) {
+      if (totalXP >= levelThresholds[i]) {
+        return {
+          level: i + 1,
+          levelName: this.getLevelName(i + 1),
+          currentLevelXP: totalXP - levelThresholds[i],
+          nextLevelXP: levelThresholds[i + 1] ? levelThresholds[i + 1] - levelThresholds[i] : null
+        };
+      }
+    }
+    
+    return { level: 1, levelName: 'Origin I', currentLevelXP: totalXP, nextLevelXP: 100 };
+  }
+
+  // Get level name based on level number
+  static getLevelName(level) {
+    const levelNames = {
+      1: 'Origin I',
+      2: 'Origin II', 
+      3: 'Breaker I',
+      4: 'Breaker II',
+      5: 'Breaker III',
+      6: 'Dragon I',
+      7: 'Dragon II',
+      8: 'Dragon III',
+      9: 'Legend I',
+      10: 'Legend II'
+    };
+    return levelNames[level] || 'Unknown';
+  }
+
+  // Check and award achievements
+  static checkAchievements(user, questCompleted = false) {
+    const newAchievements = [];
+    
+    // First quest achievement
+    if (questCompleted && user.completedQuests.length === 1) {
+      if (!user.achievements.includes('first-quest')) {
+        newAchievements.push('first-quest');
+      }
+    }
+
+    // Quest master achievement
+    if (user.completedQuests.length >= 10) {
+      if (!user.achievements.includes('quest-master')) {
+        newAchievements.push('quest-master');
+      }
+    }
+
+    // Level achievements
+    const currentLevel = this.calculateLevel(user.xp).level;
+    const levelAchievement = `level-${currentLevel}`;
+    if (!user.achievements.includes(levelAchievement)) {
+      newAchievements.push(levelAchievement);
+    }
+
+    // Streak achievements
+    if (user.streak >= 7 && !user.achievements.includes('week-warrior')) {
+      newAchievements.push('week-warrior');
+    }
+    
+    if (user.streak >= 30 && !user.achievements.includes('month-master')) {
+      newAchievements.push('month-master');
+    }
+
+    return newAchievements;
+  }
+
+  // Update user streak based on login
+  static updateStreak(user) {
+    const today = new Date();
+    const lastLogin = new Date(user.lastLogin);
+    const timeDiff = Math.floor((today - lastLogin) / (1000 * 60 * 60 * 24));
+
+    if (timeDiff === 1) {
+      // Consecutive day login
+      user.streak += 1;
+    } else if (timeDiff > 1) {
+      // Streak broken
+      user.streak = 1;
+    }
+    // If timeDiff === 0, user already logged in today, no change
+
+    user.lastLogin = today;
+    return user;
+  }
+}
+
+module.exports = GameController;
+```
+
+### Step 5.2: Create Authentication Middleware
+1. Create `backend/middleware/auth.js`
+2. Add this code:
+```javascript
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+
+const authenticate = async (req, res, next) => {
+  try {
+    // Get token from header
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ error: 'Access denied. No token provided.' });
+    }
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Get user from database
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid token.' });
+    }
+
+    // Add user to request object
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid token.' });
+  }
+};
+
+module.exports = authenticate;
+```
+
+## Stage 6: API Routes Development
+
+### Step 6.1: Create Authentication Routes
+1. Create `backend/routes/auth.js`
+2. Add this code:
+```javascript
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const GameController = require('../controllers/gameController');
+
+const router = express.Router();
+
+// Register new user
+router.post('/register', async (req, res) => {
+  try {
+    const { username, email, password, avatar, theme } = req.body;
+
+    // Validate input
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: 'Please provide username, email, and password' });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ 
+      $or: [{ email }, { username }] 
+    });
+    
+    if (existingUser) {
+      return res.status(400).json({ error: 'User already exists with this email or username' });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    // Create new user
+    const user = new User({
+      username,
+      email,
+      password: hashedPassword,
+      avatar: avatar || 'warrior',
+      theme: theme || 'dark'
+    });
+
+    await user.save();
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.status(201).json({
+      message: 'User registered successfully',
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        xp: user.xp,
+        level: user.level,
+        avatar: user.avatar,
+        theme: user.theme
+      }
+    });
+
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ error: 'Server error during registration' });
+  }
+});
+
+// Login user
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Please provide email and password' });
+    }
+
+    // Find user
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid credentials' });
+    }
+
+    // Check password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ error: 'Invalid credentials' });
+    }
+
+    // Update streak and last login
+    GameController.updateStreak(user);
+    await user.save();
+
+    // Generate JWT token
+    const token = jwt.sign(
+      { id: user._id },
+      process.env.JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    // Get level information
+    const levelInfo = GameController.calculateLevel(user.xp);
+
+    res.json({
+      message: 'Login successful',
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        xp: user.xp,
+        level: levelInfo.level,
+        levelName: levelInfo.levelName,
+        avatar: user.avatar,
+        theme: user.theme,
+        streak: user.streak,
+        achievements: user.achievements
+      }
+    });
+
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Server error during login' });
+  }
+});
+
+module.exports = router;
+```
+
+### Step 6.2: Create User Routes
+1. Create `backend/routes/users.js`
+2. Add this code:
+```javascript
+const express = require('express');
+const User = require('../models/User');
+const authenticate = require('../middleware/auth');
+const GameController = require('../controllers/gameController');
+
+const router = express.Router();
+
+// Get user profile
+router.get('/profile', authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id)
+      .select('-password')
+      .populate('completedQuests', 'title difficulty xpReward');
+
+    const levelInfo = GameController.calculateLevel(user.xp);
+
+    res.json({
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        xp: user.xp,
+        level: levelInfo.level,
+        levelName: levelInfo.levelName,
+        currentLevelXP: levelInfo.currentLevelXP,
+        nextLevelXP: levelInfo.nextLevelXP,
+        avatar: user.avatar,
+        theme: user.theme,
+        streak: user.streak,
+        achievements: user.achievements,
+        completedQuests: user.completedQuests,
+        joinDate: user.joinDate
+      }
+    });
+  } catch (error) {
+    console.error('Profile error:', error);
+    res.status(500).json({ error: 'Server error fetching profile' });
+  }
+});
+
+// Update user profile
+router.put('/profile', authenticate, async (req, res) => {
+  try {
+    const { avatar, theme, username } = req.body;
+    const updateData = {};
+
+    if (avatar) updateData.avatar = avatar;
+    if (theme) updateData.theme = theme;
+    if (username) {
+      // Check if username is already taken
+      const existingUser = await User.findOne({ 
+        username, 
+        _id: { $ne: req.user.id } 
+      });
+      
+      if (existingUser) {
+        return res.status(400).json({ error: 'Username already taken' });
+      }
+      updateData.username = username;
+    }
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      updateData,
+      { new: true }
+    ).select('-password');
+
+    res.json({
+      message: 'Profile updated successfully',
+      user: {
+        id: user._id,
+        username: user.username,
+        avatar: user.avatar,
+        theme: user.theme
+      }
+    });
+
+  } catch (error) {
+    console.error('Profile update error:', error);
+    res.status(500).json({ error: 'Server error updating profile' });
+  }
+});
+
+// Get leaderboard
+router.get('/leaderboard', async (req, res) => {
+  try {
+    const users = await User.find()
+      .select('username xp avatar')
+      .sort({ xp: -1 })
+      .limit(10);
+
+    const leaderboard = users.map((user, index) => {
+      const levelInfo = GameController.calculateLevel(user.xp);
+      return {
+        rank: index + 1,
+        username: user.username,
+        xp: user.xp,
+        level: levelInfo.level,
+        levelName: levelInfo.levelName,
+        avatar: user.avatar
+      };
+    });
+
+    res.json({ leaderboard });
+  } catch (error) {
+    console.error('Leaderboard error:', error);
+    res.status(500).json({ error: 'Server error fetching leaderboard' });
+  }
+});
+
+module.exports = router;
+```
+
+## Stage 7: Server Setup and Testing
+
+### Step 7.1: Create Main Server File
+1. Create `backend/server.js`
+2. Add this code:
+```javascript
+require('dotenv').config();
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const userRoutes = require('./routes/users');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('✅ Connected to MongoDB Atlas'))
+  .catch((err) => console.error('❌ MongoDB connection error:', err));
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+
+// Health check route
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    message: 'CodeRealms API is running!', 
+    timestamp: new Date().toISOString() 
+  });
+});
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: 'Something went wrong!' });
+});
+
+// Handle 404 routes
+app.use('*', (req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on http://localhost:${PORT}`);
+  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+});
+```
+
+### Step 7.2: Test Your Backend
+1. Open terminal in VS Code
+2. Navigate to backend: `cd backend`
+3. Start the server: `npm run dev`
+4. You should see messages like:
+   - "✅ Connected to MongoDB Atlas"
+   - "🚀 Server running on http://localhost:3000"
+5. Open browser and go to: http://localhost:3000/api/health
+6. You should see a JSON response with "CodeRealms API is running!"
+
+### Step 7.3: Test API Endpoints
+1. Install REST Client extension if not already installed
+2. Create `backend/test.http` file
+3. Add this content to test your endpoints:
+```http
+### Health Check
+GET http://localhost:3000/api/health
+
+### Register User
+POST http://localhost:3000/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "email": "test@example.com",
+  "password": "password123",
+  "avatar": "warrior",
+  "theme": "dark"
+}
+
+### Login User
+POST http://localhost:3000/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "password123"
+}
+
+### Get Profile (replace YOUR_TOKEN_HERE with actual token from login)
+GET http://localhost:3000/api/users/profile
+Authorization: Bearer YOUR_TOKEN_HERE
+
+### Get Leaderboard
+GET http://localhost:3000/api/users/leaderboard
+```
+
+4. Click "Send Request" above each section to test
+
+## Stage 8: Frontend Foundation
+
+### Step 8.1: Create Basic HTML Structure
+1. Create `frontend/index.html`:
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeRealms - Gamified DSA Learning</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="fixed inset-0 bg-gray-900 flex items-center justify-center z-50">
+        <div class="text-center">
+            <div class="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500 mx-auto"></div>
+            <p class="mt-4 text-xl">Loading CodeRealms...</p>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav id="navbar" class="bg-gray-800 shadow-lg hidden">
+        <div class="container mx-auto px-6 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <h1 class="text-2xl font-bold text-blue-500">CodeRealms</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <div id="user-info" class="flex items-center space-x-2">
+                        <img id="user-avatar" src="" alt="Avatar" class="w-8 h-8 rounded-full">
+                        <span id="user-name"></span>
+                        <span id="user-level" class="bg-blue-600 px-2 py-1 rounded text-sm"></span>
+                        <span id="user-xp" class="text-yellow-400"></span>
+                    </div>
+                    <button id="logout-btn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="main-content" class="hidden">
+        <!-- Dashboard View -->
+        <div id="dashboard-view" class="container mx-auto px-6 py-8">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-gray-800 rounded-lg p-6 text-center">
+                    <div class="text-3xl font-bold text-blue-500" id="total-xp">0</div>
+                    <div class="text-gray-400">Total XP</div>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-6 text-center">
+                    <div class="text-3xl font-bold text-green-500" id="current-level">1</div>
+                    <div class="text-gray-400">Current Level</div>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-6 text-center">
+                    <div class="text-3xl font-bold text-orange-500" id="quest-count">0</div>
+                    <div class="text-gray-400">Quests Completed</div>
+                </div>
+                <div class="bg-gray-800 rounded-lg p-6 text-center">
+                    <div class="text-3xl font-bold text-purple-500" id="streak-count">0</div>
+                    <div class="text-gray-400">Day Streak</div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="bg-gray-800 rounded-lg p-6 mb-8">
+                <h3 class="text-xl font-bold mb-4">Level Progress</h3>
+                <div class="bg-gray-700 rounded-full h-4 mb-2">
+                    <div id="progress-bar" class="bg-blue-500 h-4 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <div class="flex justify-between text-sm text-gray-400">
+                    <span id="current-level-xp">0 XP</span>
+                    <span id="next-level-xp">100 XP</span>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <button id="start-quest-btn" class="bg-green-600 hover:bg-green-700 rounded-lg p-8 text-center transition-colors">
+                    <i class="fas fa-play-circle text-4xl mb-4"></i>
+                    <h3 class="text-xl font-bold">Start Quest</h3>
+                    <p class="text-gray-300">Begin your coding adventure</p>
+                </button>
+                
+                <button id="view-profile-btn" class="bg-blue-600 hover:bg-blue-700 rounded-lg p-8 text-center transition-colors">
+                    <i class="fas fa-user text-4xl mb-4"></i>
+                    <h3 class="text-xl font-bold">Profile</h3>
+                    <p class="text-gray-300">Customize your character</p>
+                </button>
+                
+                <button id="leaderboard-btn" class="bg-purple-600 hover:bg-purple-700 rounded-lg p-8 text-center transition-colors">
+                    <i class="fas fa-trophy text-4xl mb-4"></i>
+                    <h3 class="text-xl font-bold">Leaderboard</h3>
+                    <p class="text-gray-300">See top players</p>
+                </button>
+            </div>
+        </div>
+
+        <!-- Profile View -->
+        <div id="profile-view" class="container mx-auto px-6 py-8 hidden">
+            <div class="bg-gray-800 rounded-lg p-8">
+                <h2 class="text-3xl font-bold mb-6">Profile Settings</h2>
+                
+                <!-- Avatar Selection -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-bold mb-4">Choose Your Avatar</h3>
+                    <div class="grid grid-cols-3 md:grid-cols-6 gap-4" id="avatar-selection">
+                        <!-- Avatar options will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Theme Selection -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-bold mb-4">Theme</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-4" id="theme-selection">
+                        <!-- Theme options will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <button id="save-profile-btn" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg">
+                    Save Changes
+                </button>
+                <button id="back-dashboard-btn" class="bg-gray-600 hover:bg-gray-700 px-6 py-3 rounded-lg ml-4">
+                    Back to Dashboard
+                </button>
+            </div>
+        </div>
+
+        ```html
+        <!-- Leaderboard View -->
+        <div id="leaderboard-view" class="container mx-auto px-6 py-8 hidden">
+            <div class="bg-gray-800 rounded-lg p-8">
+                <h2 class="text-3xl font-bold mb-6">Global Leaderboard</h2>
+                <div id="leaderboard-content" class="space-y-4">
+                    <!-- Leaderboard entries will be populated by JavaScript -->
+                </div>
+                <button id="back-from-leaderboard-btn" class="bg-gray-600 hover:bg-gray-700 px-6 py-3 rounded-lg mt-6">
+                    Back to Dashboard
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Login/Register Screen -->
+    <div id="auth-screen" class="min-h-screen flex items-center justify-center">
+        <div class="bg-gray-800 p-8 rounded-lg shadow-xl w-full max-w-md">
+            <h1 class="text-3xl font-bold text-center mb-8 text-blue-500">CodeRealms</h1>
+            
+            <!-- Login Form -->
+            <form id="login-form" class="space-y-4">
+                <h2 class="text-2xl font-bold text-center mb-6">Login</h2>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Email</label>
+                    <input type="email" id="login-email" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Password</label>
+                    <input type="password" id="login-password" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-md font-medium">Login</button>
+                <p class="text-center text-gray-400">
+                    Don't have an account? 
+                    <button type="button" id="show-register" class="text-blue-500 hover:text-blue-400">Register</button>
+                </p>
+            </form>
+
+            <!-- Register Form -->
+            <form id="register-form" class="space-y-4 hidden">
+                <h2 class="text-2xl font-bold text-center mb-6">Register</h2>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Username</label>
+                    <input type="text" id="register-username" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Email</label>
+                    <input type="email" id="register-email" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Password</label>
+                    <input type="password" id="register-password" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+                </div>
+                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 py-2 rounded-md font-medium">Register</button>
+                <p class="text-center text-gray-400">
+                    Already have an account? 
+                    <button type="button" id="show-login" class="text-blue-500 hover:text-blue-400">Login</button>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Error/Success Messages -->
+    <div id="message-container" class="fixed top-4 right-4 z-50"></div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
+```
+
+### Step 8.2: Create CSS Styles
+1. Create `frontend/css/style.css`:
+```css
+/* Custom styles for CodeRealms */
+.avatar-option {
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.avatar-option:hover {
+    transform: scale(1.05);
+}
+
+.avatar-option.selected {
+    border: 3px solid #3b82f6;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+}
+
+.theme-option {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.theme-option:hover {
+    transform: scale(1.02);
+}
+
+.theme-option.selected {
+    border: 3px solid #3b82f6;
+    box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+}
+
+.leaderboard-entry {
+    transition: all 0.3s ease;
+}
+
+.leaderboard-entry:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.message {
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    animation: slideIn 0.3s ease;
+}
+
+.message.success {
+    background-color: #059669;
+    border: 1px solid #10b981;
+}
+
+.message.error {
+    background-color: #dc2626;
+    border: 1px solid #ef4444;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Avatar images */
+.avatar-img {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+/* Level progress animation */
+.progress-bar-animated {
+    transition: width 1s ease-in-out;
+}
+
+/* Theme-specific backgrounds */
+.theme-dark { background: linear-gradient(135deg, #1f2937, #111827); }
+.theme-light { background: linear-gradient(135deg, #f3f4f6, #e5e7eb); }
+.theme-cyberpunk { background: linear-gradient(135deg, #0f0f0f, #ff00ff, #00ffff); }
+.theme-forest { background: linear-gradient(135deg, #065f46, #064e3b); }
+.theme-ocean { background: linear-gradient(135deg, #1e40af, #1e3a8a); }
+.theme-sunset { background: linear-gradient(135deg, #f59e0b, #f97316); }
+```
+
+## Stage 9: Frontend JavaScript Implementation
+
+### Step 9.1: Create Main App Logic
+1. Create `frontend/js/app.js`:
+```javascript
+class CodeRealmsApp {
+    constructor() {
+        this.apiBase = 'http://localhost:3000/api';
+        this.token = localStorage.getItem('token');
+        this.currentUser = null;
+        this.currentView = 'dashboard';
+        
+        // Avatar options
+        this.avatars = [
+            { id: 'warrior', name: 'Warrior', icon: '⚔️' },
+            { id: 'mage', name: 'Mage', icon: '🧙‍♂️' },
+            { id: 'hacker', name: 'Hacker', icon: '👨‍💻' },
+            { id: 'rogue', name: 'Rogue', icon: '🥷' },
+            { id: 'scientist', name: 'Scientist', icon: '🔬' },
+            { id: 'ai-engineer', name: 'AI Engineer', icon: '🤖' }
+        ];
+
+        // Theme options
+        this.themes = [
+            { id: 'dark', name: 'Dark', class: 'theme-dark' },
+            { id: 'light', name: 'Light', class: 'theme-light' },
+            { id: 'cyberpunk', name: 'Cyberpunk', class: 'theme-cyberpunk' },
+            { id: 'forest', name: 'Forest', class: 'theme-forest' },
+            { id: 'ocean', name: 'Ocean', class: 'theme-ocean' },
+            { id: 'sunset', name: 'Sunset', class: 'theme-sunset' }
+        ];
+
+        this.init();
+    }
+
+    async init() {
+        this.showLoading();
+        await this.checkAuth();
+        this.setupEventListeners();
+        this.hideLoading();
+    }
+
+    // Authentication Methods
+    async checkAuth() {
+        if (this.token) {
+            try {
+                const response = await this.apiCall('/users/profile', 'GET');
+                if (response.user) {
+                    this.currentUser = response.user;
+                    this.showMainApp();
+                    this.updateDashboard();
+                } else {
+                    this.showAuth();
+                }
+            } catch (error) {
+                console.error('Auth check failed:', error);
+                this.token = null;
+                localStorage.removeItem('token');
+                this.showAuth();
+            }
+        } else {
+            this.showAuth();
+        }
+    }
+
+    async login(email, password) {
+        try {
+            const response = await this.apiCall('/auth/login', 'POST', { email, password });
+            
+            this.token = response.token;
+            this.currentUser = response.user;
+            localStorage.setItem('token', this.token);
+            
+            this.showMessage('Login successful!', 'success');
+            this.showMainApp();
+            this.updateDashboard();
+        } catch (error) {
+            this.showMessage(error.message || 'Login failed', 'error');
+        }
+    }
+
+    async register(username, email, password) {
+        try {
+            const response = await this.apiCall('/auth/register', 'POST', {
+                username, email, password, avatar: 'warrior', theme: 'dark'
+            });
+            
+            this.token = response.token;
+            this.currentUser = response.user;
+            localStorage.setItem('token', this.token);
+            
+            this.showMessage('Registration successful!', 'success');
+            this.showMainApp();
+            this.updateDashboard();
+        } catch (error) {
+            this.showMessage(error.message || 'Registration failed', 'error');
+        }
+    }
+
+    logout() {
+        this.token = null;
+        this.currentUser = null;
+        localStorage.removeItem('token');
+        this.showAuth();
+        this.showMessage('Logged out successfully', 'success');
+    }
+
+    // API Methods
+    async apiCall(endpoint, method = 'GET', data = null) {
+        const config = {
+            method,
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        };
+
+        if (this.token) {
+            config.headers['Authorization'] = `Bearer ${this.token}`;
+        }
+
+        if (data) {
+            config.body = JSON.stringify(data);
+        }
+
+        const response = await fetch(this.apiBase + endpoint, config);
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'API call failed');
+        }
+
+        return result;
+    }
+
+    // UI Methods
+    showLoading() {
+        document.getElementById('loading-screen').classList.remove('hidden');
+    }
+
+    hideLoading() {
+        document.getElementById('loading-screen').classList.add('hidden');
+    }
+
+    showAuth() {
+        document.getElementById('auth-screen').classList.remove('hidden');
+        document.getElementById('main-content').classList.add('hidden');
+        document.getElementById('navbar').classList.add('hidden');
+    }
+
+    showMainApp() {
+        document.getElementById('auth-screen').classList.add('hidden');
+        document.getElementById('main-content').classList.remove('hidden');
+        document.getElementById('navbar').classList.remove('hidden');
+        this.updateNavbar();
+    }
+
+    showView(viewName) {
+        // Hide all views
+        document.querySelectorAll('[id$="-view"]').forEach(view => {
+            view.classList.add('hidden');
+        });
+
+        // Show selected view
+        document.getElementById(`${viewName}-view`).classList.remove('hidden');
+        this.currentView = viewName;
+
+        // Load view-specific data
+        if (viewName === 'leaderboard') {
+            this.loadLeaderboard();
+        } else if (viewName === 'profile') {
+            this.loadProfile();
+        }
+    }
+
+    updateNavbar() {
+        if (!this.currentUser) return;
+
+        document.getElementById('user-name').textContent = this.currentUser.username;
+        document.getElementById('user-level').textContent = `Level ${this.currentUser.level}`;
+        document.getElementById('user-xp').textContent = `${this.currentUser.xp} XP`;
+        
+        // Set avatar (using emoji for now)
+        const avatar = this.avatars.find(a => a.id === this.currentUser.avatar);
+        document.getElementById('user-avatar').textContent = avatar?.icon || '⚔️';
+    }
+
+    updateDashboard() {
+        if (!this.currentUser) return;
+
+        document.getElementById('total-xp').textContent = this.currentUser.xp;
+        document.getElementById('current-level').textContent = this.currentUser.level;
+        document.getElementById('quest-count').textContent = this.currentUser.completedQuests?.length || 0;
+        document.getElementById('streak-count').textContent = this.currentUser.streak || 0;
+
+        // Update progress bar
+        const currentLevelXP = this.currentUser.currentLevelXP || 0;
+        const nextLevelXP = this.currentUser.nextLevelXP || 100;
+        const progress = Math.min((currentLevelXP / nextLevelXP) * 100, 100);
+        
+        document.getElementById('progress-bar').style.width = `${progress}%`;
+        document.getElementById('current-level-xp').textContent = `${currentLevelXP} XP`;
+        document.getElementById('next-level-xp').textContent = nextLevelXP ? `${nextLevelXP} XP` : 'MAX';
+    }
+
+    loadProfile() {
+        // Populate avatar selection
+        const avatarContainer = document.getElementById('avatar-selection');
+        avatarContainer.innerHTML = '';
+        
+        this.avatars.forEach(avatar => {
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = `avatar-option bg-gray-700 p-4 rounded-lg text-center ${
+                this.currentUser.avatar === avatar.id ? 'selected' : ''
+            }`;
+            avatarDiv.innerHTML = `
+                <div class="text-3xl mb-2">${avatar.icon}</div>
+                <div class="text-sm">${avatar.name}</div>
+            `;
+            avatarDiv.addEventListener('click', () => this.selectAvatar(avatar.id));
+            avatarContainer.appendChild(avatarDiv);
+        });
+
+        // Populate theme selection
+        const themeContainer = document.getElementById('theme-selection');
+        themeContainer.innerHTML = '';
+        
+        this.themes.forEach(theme => {
+            const themeDiv = document.createElement('div');
+            themeDiv.className = `theme-option ${theme.class} rounded-lg ${
+                this.currentUser.theme === theme.id ? 'selected' : ''
+            }`;
+            themeDiv.innerHTML = `<span class="font-bold">${theme.name}</span>`;
+            themeDiv.addEventListener('click', () => this.selectTheme(theme.id));
+            themeContainer.appendChild(themeDiv);
+        });
+    }
+
+    selectAvatar(avatarId) {
+        document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
+        event.currentTarget.classList.add('selected');
+        this.currentUser.avatar = avatarId;
+    }
+
+    selectTheme(themeId) {
+        document.querySelectorAll('.theme-option').forEach(el => el.classList.remove('selected'));
+        event.currentTarget.classList.add('selected');
+        this.currentUser.theme = themeId;
+    }
+
+    async saveProfile() {
+        try {
+            await this.apiCall('/users/profile', 'PUT', {
+                avatar: this.currentUser.avatar,
+                theme: this.currentUser.theme
+            });
+            
+            this.showMessage('Profile updated successfully!', 'success');
+            this.updateNavbar();
+            this.showView('dashboard');
+        } catch (error) {
+            this.showMessage(error.message || 'Failed to update profile', 'error');
+        }
+    }
+
+    async loadLeaderboard() {
+        try {
+            const response = await this.apiCall('/users/leaderboard', 'GET');
+            const container = document.getElementById('leaderboard-content');
+            
+            container.innerHTML = response.leaderboard.map((user, index) => `
+                <div class="leaderboard-entry bg-gray-700 p-4 rounded-lg flex items-center justify-between">
+                    <div class="flex items-center space-x-4">
+                        <div class="text-2xl font-bold ${
+                            index === 0 ? 'text-yellow-400' : 
+                            index === 1 ? 'text-gray-400' : 
+                            index === 2 ? 'text-orange-400' : 'text-gray-500'
+                        }">
+                            #${user.rank}
+                        </div>
+                        <div class="text-2xl">${this.avatars.find(a => a.id === user.avatar)?.icon || '⚔️'}</div>
+                        <div>
+                            <div class="font-bold">${user.username}</div>
+                            <div class="text-sm text-gray-400">${user.levelName}</div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-bold text-yellow-400">${user.xp} XP</div>
+                        <div class="text-sm text-gray-400">Level ${user.level}</div>
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            this.showMessage('Failed to load leaderboard', 'error');
+        }
+    }
+
+    showMessage(message, type = 'info') {
+        const container = document.getElementById('message-container');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        messageDiv.textContent = message;
+        
+        container.appendChild(messageDiv);
+        
+        setTimeout(() => {
+            messageDiv.remove();
+        }, 3000);
+    }
+
+    // Event Listeners
+    setupEventListeners() {
+        // Auth forms
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            this.login(email, password);
+        });
+
+        document.getElementById('register-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const username = document.getElementById('register-username').value;
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+            this.register(username, email, password);
+        });
+
+        // Toggle between login/register
+        document.getElementById('show-register').addEventListener('click', () => {
+            document.getElementById('login-form').classList.add('hidden');
+            document.getElementById('register-form').classList.remove('hidden');
+        });
+
+        document.getElementById('show-login').addEventListener('click', () => {
+            document.getElementById('register-form').classList.add('hidden');
+            document.getElementById('login-form').classList.remove('hidden');
+        });
+
+        // Navigation
+        document.getElementById('logout-btn').addEventListener('click', () => this.logout());
+        document.getElementById('start-quest-btn').addEventListener('click', () => {
+            this.showMessage('Quest system coming soon!', 'info');
+        });
+        document.getElementById('view-profile-btn').addEventListener('click', () => this.showView('profile'));
+        document.getElementById('leaderboard-btn').addEventListener('click', () => this.showView('leaderboard'));
+        document.getElementById('back-dashboard-btn').addEventListener('click', () => this.showView('dashboard'));
+        document.getElementById('back-from-leaderboard-btn').addEventListener('click', () => this.showView('dashboard'));
+        
+        // Profile actions
+        document.getElementById('save-profile-btn').addEventListener('click', () => this.saveProfile());
+    }
+}
+
+// Initialize the app when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    new CodeRealmsApp();
+});
+```
+
+## Stage 10: Testing the Complete Frontend
+
+### Step 10.1: Start Both Backend and Frontend
+1. **Terminal 1 (Backend)**:
+   ```bash
+   cd backend
+   npm run dev
+   ```
+
+2. **Terminal 2 (Frontend)**:
+   - Right-click on `frontend/index.html` in VS Code
+   - Select "Open with Live Server"
+   - Or use terminal:
+   ```bash
+   cd frontend
+   python -m http.server 8000
+   ```
+
+### Step 10.2: Test Full User Flow
+1. Open browser to your frontend URL (usually http://localhost:5500 or http://localhost:8000)
+2. **Register a new user**:
+   - Fill out registration form
+   - Click "Register"
+   - Should redirect to dashboard
+
+3. **Test Dashboard**:
+   - Check if user stats display correctly
+   - Verify progress bar shows
+   - Click navigation buttons
+
+4. **Test Profile**:
+   - Click "Profile" button
+   - Select different avatar
+   - Select different theme
+   - Click "Save Changes"
+   - Verify changes reflect in navbar
+
+5. **Test Leaderboard**:
+   - Click "Leaderboard" button
+   - Should show your user (and others if you created multiple accounts)
+
+6. **Test Logout/Login**:
+   - Click "Logout"
+   - Should return to login screen
+   - Login with same credentials
+   - Should return to dashboard with preserved data
+
+## Stage 11: Adding Sample Quest Data
+
+### Step 11.1: Create Sample Quests
+1. Create `backend/scripts/seedQuests.js`:
+```javascript
+require('dotenv').config();
+const mongoose = require('mongoose');
+const Quest = require('../models/Quest');
+
+const sampleQuests = [
+    {
+        title: "Two Sum",
+        description: "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.\n\nYou may assume that each input would have exactly one solution, and you may not use the same element twice.\n\nExample:\nInput: nums = [2,7,11,15], target = 9\nOutput: [0,1]\nExplanation: Because nums[0] + nums[1] == 9, we return [0, 1].",
+        difficulty: "easy",
+        category: "DSA",
+        codeTemplate: `function twoSum(nums, target) {
+    // Your code here
+    
+}`,
+        testCases: [
+            {
+                input: "[2,7,11,15]\n9",
+                expectedOutput: "[0,1]",
+                isHidden: false
+            },
+            {
+                input: "[3,2,4]\n6",
+                expectedOutput: "[1,2]",
+                isHidden: false
+            },
+            {
+                input: "[3,3]\n6",
+                expectedOutput: "[0,1]",
+                isHidden: true
+            }
+        ],
+        xpReward: 10,
+        hints: [
+            "Try using a hash map to store previously seen numbers",
+            "For each number, check if target - current number exists in the map"
+        ],
+        solution: `function twoSum(nums, target) {
+    const map = new Map();
+    
+    for (let i = 0; i < nums.length; i++) {
+        const complement = target - nums[i];
+        
+        if (map.has(complement)) {
+            return [map.get(complement), i];
+        }
+        
+        map.set(nums[i], i);
+    }
+    
+    return [];
+}`,
+        tags: ["array", "hash-table"]
+    },
+    {
+        title: "Reverse Linked List",
+        description: "Given the head of a singly linked list, reverse the list, and return the reversed list.\n\nExample:\nInput: head = [1,2,3,4,5]\nOutput: [5,4,3,2,1]",
+        difficulty: "medium",
+        category: "DSA",
+        codeTemplate: `function reverseList(head) {
+    // Your code here
+    
+}`,
+        testCases: [
+            {
+                input: "[1,2,3,4,5]",
+                expectedOutput: "[5,4,3,2,1]",
+                isHidden: false
+            },
+            {
+                input: "[1,2]",
+                expectedOutput: "[2,1]",
+                isHidden: false
+            },
+            {
+                input: "[]",
+                expectedOutput: "[]",
+                isHidden: true
+            }
+        ],
+        xpReward: 25,
+        hints: [
+            "Use three pointers: prev, current, and next",
+            "Iterate through the list and reverse the links"
+        ],
+        solution: `function reverseList(head) {
+    let prev = null;
+    let current = head;
+    
+    while (current !== null) {
+        const next = current.next;
+        current.next = prev;
+        prev = current;
+        current = next;
+    }
+    
+    return prev;
+}`,
+        tags: ["linked-list", "iteration"]
+    },
+    {
+        title: "Valid Parentheses",
+        description: "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.\n\nAn input string is valid if:\n1. Open brackets must be closed by the same type of brackets.\n2. Open brackets must be closed in the correct order.\n\nExample:\nInput: s = \"()\"\nOutput: true",
+        difficulty: "easy",
+        category: "DSA",
+        codeTemplate: `function isValid(s) {
+    // Your code here
+    
+}`,
+        testCases: [
+            {
+                input: "\"()\"",
+                expectedOutput: "true",
+                isHidden: false
+            },
+            {
+                input: "\"()[]{}\"",
+                expectedOutput: "true",
+                isHidden: false
+            },
+            {
+                input: "\"(]\"",
+                expectedOutput: "false",
+                isHidden: true
+            }
+        ],
+        xpReward: 10,
+        hints: [
+            "Use a stack data structure",
+            "Push opening brackets onto the stack, pop when you see closing brackets"
+        ],
+        solution: `function isValid(s) {
+    const stack = [];
+    const map = {
+        ')': '(',
+        '}': '{',
+        ']': '['
+    };
+    
+    for (let char of s) {
+        if (char === '(' || char === '{' || char === '[') {
+            stack.push(char);
+        } else {
+            if (stack.length === 0 || stack.pop() !== map[char]) {
+                return false;
+            }
+        }
+    }
+    
+    return stack.length === 0;
+}`,
+        tags: ["string", "stack"]
+    }
+];
+
+async function seedQuests() {
+    try {
+        await mongoose.connect(process.env.MONGODB_URI);
+        console.log('Connected to MongoDB');
+        
+        // Clear existing quests
+        await Quest.deleteMany({});
+        console.log('Cleared existing quests');
+        
+        // Insert sample quests
+        await Quest.insertMany(sampleQuests);
+        console.log(`Inserted ${sampleQuests.length} sample quests`);
+        
+        process.exit(0);
+    } catch (error) {
+        console.error('Error seeding quests:', error);
+        process.exit(1);
+    }
+}
+
+seedQuests();
+```
+
+### Step 11.2: Run Quest Seeder
+1. In terminal, navigate to backend folder:
+   ```bash
+   cd backend
+   node scripts/seedQuests.js
+   ```
+
+2. You should see messages:
+   - "Connected to MongoDB"
+   - "Cleared existing quests"
+   - "Inserted 3 sample quests"
+
+## Stage 12: Final Testing and Deployment Preparation
+
+### Step 12.1: Create Production Configuration
+1. Create `backend/.env.example`:
+   ```
+   MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/coderealms
+   JWT_SECRET=your_super_secret_key_here
+   PORT=3000
+   NODE_ENV=development
+   ```
+
+### Step 12.2: Update package.json for Production
+1. Update `backend/package.json` scripts:
+   ```json
+   "scripts": {
+     "start": "node server.js",
+     "dev": "nodemon server.js",
+     "seed": "node scripts/seedQuests.js"
+   }
+   ```
+
+### Step 12.3: Create Project Documentation
+1. Create `docs/SETUP.md`:
+   ```markdown
+   # CodeRealms Setup Guide
+
+   ## Prerequisites
+   - Node.js 16+ installed
+   - MongoDB Atlas account
+   - VS Code (recommended)
+
+   ## Backend Setup
+   1. Navigate to backend folder: `cd backend`
+   2. Install dependencies: `npm install`
+   3. Create `.env` file with your MongoDB URI and JWT secret
+   4. Start development server: `npm run dev`
+   5. Seed sample quests: `npm run seed`
+
+   ## Frontend Setup
+   1. Open `frontend/index.html` with Live Server
+   2. Or serve with Python: `python -m http.server 8000`
+
+   ## Testing
+   1. Register a new user
+   2. Test login/logout functionality
+   3. Check profile customization
+   4. View leaderboard
+
+   ## Production Deployment
+   - Backend: Deploy to Railway, Render, or Heroku
+   - Frontend: Deploy to Netlify, Vercel, or GitHub Pages
+   - Update API endpoints in frontend for production
+   ```
+
+### Step 12.4: Final Verification Checklist
+- [ ] Backend server starts without errors
+- [ ] MongoDB connection successful  
+- [ ] User registration works
+- [ ] User login works
+- [ ] Dashboard displays user stats
+- [ ] Profile customization saves correctly
+- [ ] Leaderboard loads and displays users
+- [ ] Logout functionality works
+- [ ] Sample quests are seeded in database
+- [ ] All API endpoints respond correctly
+
+**Congratulations! You now have a fully functional CodeRealms MVP with:**
+- User authentication system
+- Gamified progression (XP, levels, streaks)
+- Character customization (avatars, themes)
+- Global leaderboard
+- Sample quest data structure
+- Professional UI with responsive design
+- Cloud database integration
+
+**Next stages to implement:**
+- Quest solving interface with code editor
+- Code execution system integration
+- Achievement system
