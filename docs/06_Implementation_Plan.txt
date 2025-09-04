@@ -1,0 +1,225 @@
+################FOLLOW : 
+1. ask for confirmation to check changes after each phase.
+2. each stage should be fully working and without errors. 
+
+## 1. Guiding Principles & Core Architecture
+
+* **Performance, Security, Scalability** will drive all implementations.
+* **Microservices Architecture**: Each feature (Guilds, Achievements, Store, Pets, etc.) will run as an independently deployable service.
+* **Event-Driven Communication**: Services publish and subscribe to domain events (e.g., `quest.completed`, `badge.earned`) using RabbitMQ or Kafka.
+* **Real-Time Layer**: A WebSocket-powered service will handle live updates for notifications, chat, leaderboards, and collaborative features.
+* **Centralized API Gateway**: A single entry point to route traffic, enforce authentication, authorization, and rate limiting.
+* **Database Strategy**:
+
+  * Relational DB (PostgreSQL) for transactional systems (currency, store, guilds, mentorship).
+  * NoSQL/Redis for caching, sessions, and flexible progress data.
+  * Event logs for auditing and rollback capability.
+
+---
+
+## 2. Achievement Badge System
+
+### Core Design
+
+* **Tables**:
+
+  * `achievements`: id, name, description, icon\_url, category, requirements, xp\_reward.
+  * `user_achievements`: user\_id, achievement\_id, earned\_date, progress.
+  * Categories: Milestone, Streak, Mastery, Social, Special.
+
+### Functionality
+
+* Backend:
+
+  * Achievement Service listens to events (`user.login`, `quest.completed`, `mentorship.finished`).
+  * Tracks progress and awards badges, publishing `badge.earned` events.
+  * Supports caching and background jobs for complex calculations.
+* Frontend:
+
+  * Badge showcase in profile.
+  * Real-time toast notifications.
+  * Leaderboard integration for rare badges.
+  * Social sharing of earned badges.
+
+---
+
+## 3. Seasonal Events & Limited-Time Quests
+
+### Core Design
+
+* **Tables**:
+
+  * `events`: id, name, start\_date, end\_date, description, rewards, theme\_config.
+  * `event_quests`: event\_id, quest\_id, bonus\_multiplier.
+
+### Functionality
+
+* Backend:
+
+  * Events Service with lifecycle management (scheduled activation/deactivation).
+  * Bonus multipliers, exclusive quests, limited-time rewards.
+  * Admin endpoints for CRUD event management.
+* Frontend:
+
+  * Dynamic banners, themed UI, seasonal assets.
+  * Event leaderboards and special chat channels.
+  * Post-event statistics and highlights.
+
+---
+
+## 4. Guild System for Collaborative Quests
+
+### Core Design
+
+* **Tables**:
+
+  * `guilds`: id, name, description, leader\_id, level, xp.
+  * `guild_members`: guild\_id, user\_id, role, contribution\_points.
+  * `guild_quests`: id, guild\_id, quest\_type, requirements, rewards, status.
+
+### Functionality
+
+* Backend:
+
+  * Guilds Service handles creation, management, and progression.
+  * Role management (Leader, Officer, Member).
+  * Guild chat managed by the real-time service.
+  * Collaborative quests tracked via state machines.
+* Frontend:
+
+  * Guild discovery and management dashboards.
+  * Shared guild hall with quests, chat, and leaderboards.
+  * Competitions, tournaments, and collaborative quest UIs.
+
+---
+
+## 5. Mentorship Matching System
+
+### Core Design
+
+* **Tables**:
+
+  * `mentor_profiles`: user\_id, languages, availability, max\_mentees, approach.
+  * `mentee_profiles`: user\_id, goals, preferred\_languages, time\_commitment.
+
+### Functionality
+
+* Backend:
+
+  * Matching algorithm calculates compatibility (skills, timezone, preferences).
+  * Mutual approval and trial period system.
+  * API endpoints for pairing, progress tracking, and feedback.
+* Frontend:
+
+  * Onboarding for profile setup.
+  * Mentor/mentee dashboards with matches and progress.
+  * Dedicated workspace with chat, goal tracking, shared resources.
+
+---
+
+## 6. Multiple Currency System
+
+### Currency Types
+
+* **XP**: Progression metric.
+* **Coins**: Earned from quests/daily tasks.
+* **Gems**: Premium/rare rewards.
+* **Guild Tokens**: Earned via guild activities.
+* **Event Currency**: Seasonal usage only.
+
+### Core Design
+
+* **Tables**:
+
+  * `user_currencies`: user\_id, currency\_type, amount.
+  * `currency_transactions`: user\_id, currency\_type, amount, source, transaction\_type.
+
+### Functionality
+
+* Backend:
+
+  * Currency Service as sole authority for transactions.
+  * Enforces atomic updates with complete audit trails.
+* Frontend:
+
+  * Persistent balance display in header/sidebar.
+  * Real-time subscription for instant updates.
+
+---
+
+## 7. Virtual Store & Avatar Customization
+
+### Core Design
+
+* **Tables**:
+
+  * `store_items`: id, name, description, price, currency\_type, category, rarity.
+  * `user_inventory`: user\_id, item\_id, quantity.
+  * `avatar_customization`: user\_id, equipped\_items\_json.
+
+### Functionality
+
+* Backend:
+
+  * Store Service validates purchases via Currency Service.
+  * Avatar customization stored as JSON, layered rendering.
+* Frontend:
+
+  * Filterable/searchable store gallery.
+  * Live avatar preview with drag-and-drop customization.
+  * Profile/leaderboard avatar displays.
+* Extensions:
+
+  * Item crafting, user-to-user trading, seasonal items, item evolution.
+
+---
+
+## 8. Pet/Companion System
+
+### Core Design
+
+* **Tables**:
+
+  * `pets`: id, name, type, rarity, base\_stats, abilities.
+  * `user_pets`: user\_id, pet\_id, level, xp, happiness.
+  * `pet_interactions`: user\_id, pet\_id, interaction\_type, timestamp.
+
+### Functionality
+
+* Backend:
+
+  * Pets Service listens for XP events, awarding pets a percentage.
+  * Manages abilities (active/passive) and evolution.
+* Frontend:
+
+  * Animated pet on dashboard or following user.
+  * Care interface (feeding, mini-games, customization).
+  * Pet diaries to track user and pet progress.
+* Extensions:
+
+  * Pet battles in guild competitions.
+  * Breeding system for rare pets.
+
+---
+
+## Technical Considerations
+
+### Performance
+
+* Indexing, optimized queries, and caching for speed.
+* Background jobs for heavy calculations.
+* CDN for asset delivery.
+
+### Security
+
+* Strict input validation and sanitization.
+* Rate limiting and fraud detection on currency/transactions.
+* Secure payment processing for premium currency.
+
+### Scalability
+
+* Horizontally scalable microservices.
+* Event-driven workflows for resilience.
+* Load balancing and database sharding.
+* Modular services for parallel feature evolution.
+
