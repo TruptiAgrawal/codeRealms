@@ -211,7 +211,7 @@ class CodeRealmsApp {
                 <div class="text-3xl mb-2">${avatar.icon}</div>
                 <div class="text-sm">${avatar.name}</div>
             `;
-            avatarDiv.addEventListener('click', () => this.selectAvatar(avatar.id));
+            avatarDiv.addEventListener('click', (event) => this.selectAvatar(event, avatar.id));
             avatarContainer.appendChild(avatarDiv);
         });
 
@@ -225,18 +225,18 @@ class CodeRealmsApp {
                 this.currentUser.theme === theme.id ? 'selected' : ''
             }`;
             themeDiv.innerHTML = `<span class="font-bold">${theme.name}</span>`;
-            themeDiv.addEventListener('click', () => this.selectTheme(theme.id));
+            themeDiv.addEventListener('click', (event) => this.selectTheme(event, theme.id));
             themeContainer.appendChild(themeDiv);
         });
     }
 
-    selectAvatar(avatarId) {
+    selectAvatar(event, avatarId) {
         document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
         event.currentTarget.classList.add('selected');
         this.currentUser.avatar = avatarId;
     }
 
-    selectTheme(themeId) {
+    selectTheme(event, themeId) {
         document.querySelectorAll('.theme-option').forEach(el => el.classList.remove('selected'));
         event.currentTarget.classList.add('selected');
         this.currentUser.theme = themeId;
