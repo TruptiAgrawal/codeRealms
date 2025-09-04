@@ -4,6 +4,8 @@ class CodeRealmsApp {
         this.token = localStorage.getItem('token');
         this.currentUser = null;
         this.currentView = 'dashboard';
+        this.editor = null;
+        this.currentQuest = null;
         
         // Avatar options
         this.avatars = [
@@ -69,6 +71,12 @@ class CodeRealmsApp {
             this.showMessage('Login successful!', 'success');
             this.showMainApp();
             this.updateDashboard();
+
+            if (response.newAchievements && response.newAchievements.length > 0) {
+                response.newAchievements.forEach(achievement => {
+                    this.showMessage(`Achievement Unlocked: ${achievement.name}!`, 'success');
+                });
+            }
         } catch (error) {
             this.showMessage(error.message || 'Login failed', 'error');
         }
@@ -164,6 +172,8 @@ class CodeRealmsApp {
             this.loadLeaderboard();
         } else if (viewName === 'profile') {
             this.loadProfile();
+        } else if (viewName === 'quest') {
+            this.loadQuests();
         }
     }
 
@@ -228,6 +238,34 @@ class CodeRealmsApp {
             themeDiv.addEventListener('click', (event) => this.selectTheme(event, theme.id));
             themeContainer.appendChild(themeDiv);
         });
+
+        this.loadAchievements();
+    }
+
+    async loadAchievements() {
+        try {
+            const response = await this.apiCall('/users/achievements', 'GET');
+            const container = document.getElementById('achievements-grid');
+            container.innerHTML = '';
+
+            if (response.achievements && response.achievements.length > 0) {
+                response.achievements.forEach(userAchievement => {
+                    const achievement = userAchievement.achievement;
+                    const achievementDiv = document.createElement('div');
+                    achievementDiv.className = 'bg-gray-700 p-4 rounded-lg text-center';
+                    achievementDiv.innerHTML = `
+                        <img src="images/achievements/${achievement.icon_url}" alt="${achievement.name}" class="w-16 h-16 mx-auto mb-2">
+                        <div class="font-bold">${achievement.name}</div>
+                        <div class="text-sm text-gray-400">${achievement.description}</div>
+                    `;
+                    container.appendChild(achievementDiv);
+                });
+            } else {
+                container.innerHTML = '<p class="text-gray-400 col-span-full">No achievements earned yet.</p>';
+            }
+        } catch (error) {
+            this.showMessage('Failed to load achievements', 'error');
+        }
     }
 
     selectAvatar(event, avatarId) {
@@ -289,6 +327,74 @@ class CodeRealmsApp {
         }
     }
 
+    async loadQuests() {
+        try {
+            const response = await this.apiCall('/quests', 'GET');
+            const container = document.getElementById('quest-list');
+            container.innerHTML = '';
+
+            if (response.data && response.data.length > 0) {
+                response.data.forEach(quest => {
+                    const questCard = document.createElement('div');
+                    questCard.className = 'bg-gray-700 p-6 rounded-lg cursor-pointer hover:bg-gray-600';
+                    questCard.innerHTML = `
+                        <h3 class="text-xl font-bold mb-2">${quest.title}</h3>
+                        <p class="text-gray-400 mb-4">${quest.description}</p>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-bold text-yellow-400">${quest.xpReward} XP</span>
+                            <span class="text-sm capitalize ${quest.difficulty === 'easy' ? 'text-green-400' : quest.difficulty === 'medium' ? 'text-orange-400' : 'text-red-400'}">
+                                ${quest.difficulty}
+                            </span>
+                        </div>
+                    `;
+                    questCard.addEventListener('click', () => this.showQuestDetails(quest));
+                    container.appendChild(questCard);
+                });
+            }
+        } catch (error) {
+            this.showMessage('Failed to load quests', 'error');
+        }
+    }
+
+    showQuestDetails(quest) {
+        this.currentQuest = quest;
+        document.getElementById('quest-list').classList.add('hidden');
+        document.getElementById('quest-details').classList.remove('hidden');
+        document.getElementById('quest-title').textContent = quest.title;
+        document.getElementById('quest-description').textContent = quest.description;
+
+        if (!this.editor) {
+            this.editor = ace.edit("code-editor");
+            this.editor.setTheme("ace/theme/monokai");
+            this.editor.session.setMode("ace/mode/javascript");
+        }
+        this.editor.setValue(quest.codeTemplate || '', -1);
+    }
+
+    async submitQuest() {
+        if (!this.currentQuest) return;
+
+        const code = this.editor.getValue();
+        try {
+            const response = await this.apiCall(`/quests/${this.currentQuest._id}/submit`, 'POST', { code, language: 'javascript' });
+            this.showMessage(response.message, response.success ? 'success' : 'error');
+
+            if (response.success) {
+                this.currentUser.xp += response.xp_reward;
+                this.updateDashboard();
+                this.showView('dashboard');
+
+                if (response.new_achievements && response.new_achievements.length > 0) {
+                    response.new_achievements.forEach(achievement => {
+                        this.showMessage(`Achievement Unlocked: ${achievement.name}!`, 'success');
+                    });
+                }
+            }
+        } catch (error) {
+            this.showMessage(error.message || 'Failed to submit quest', 'error');
+        }
+    }
+
     showMessage(message, type = 'info') {
         const container = document.getElementById('message-container');
         const messageDiv = document.createElement('div');
@@ -333,16 +439,21 @@ class CodeRealmsApp {
 
         // Navigation
         document.getElementById('logout-btn').addEventListener('click', () => this.logout());
-        document.getElementById('start-quest-btn').addEventListener('click', () => {
-            this.showMessage('Quest system coming soon!', 'info');
-        });
+        document.getElementById('start-quest-btn').addEventListener('click', () => this.showView('quest'));
         document.getElementById('view-profile-btn').addEventListener('click', () => this.showView('profile'));
         document.getElementById('leaderboard-btn').addEventListener('click', () => this.showView('leaderboard'));
         document.getElementById('back-dashboard-btn').addEventListener('click', () => this.showView('dashboard'));
         document.getElementById('back-from-leaderboard-btn').addEventListener('click', () => this.showView('dashboard'));
+        document.getElementById('back-to-quests-btn').addEventListener('click', () => {
+            document.getElementById('quest-details').classList.add('hidden');
+            document.getElementById('quest-list').classList.remove('hidden');
+        });
         
         // Profile actions
         document.getElementById('save-profile-btn').addEventListener('click', () => this.saveProfile());
+
+        // Quest actions
+        document.getElementById('submit-quest-btn').addEventListener('click', () => this.submitQuest());
     }
 }
 

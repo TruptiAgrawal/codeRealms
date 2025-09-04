@@ -7,6 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
 </head>
 <body class="bg-gray-900 text-white min-h-screen">
     <!-- Loading Screen -->
@@ -118,6 +119,14 @@
                     </div>
                 </div>
 
+                <!-- Achievements Section -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-bold mb-4">Achievements</h3>
+                    <div id="achievements-grid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                        <!-- Achievements will be populated by JavaScript -->
+                    </div>
+                </div>
+
                 <button id="save-profile-btn" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg">
                     Save Changes
                 </button>
@@ -137,6 +146,26 @@
                 <button id="back-from-leaderboard-btn" class="bg-gray-600 hover:bg-gray-700 px-6 py-3 rounded-lg mt-6">
                     Back to Dashboard
                 </button>
+            </div>
+        </div>
+    <!-- Quest View -->
+        <div id="quest-view" class="container mx-auto px-6 py-8 hidden">
+            <div class="bg-gray-800 rounded-lg p-8">
+                <h2 class="text-3xl font-bold mb-6">Quests</h2>
+                <div id="quest-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                    <!-- Quest cards will be populated by JavaScript -->
+                </div>
+                <div id="quest-details" class="hidden">
+                    <h3 id="quest-title" class="text-2xl font-bold mb-4"></h3>
+                    <p id="quest-description" class="text-gray-400 mb-4"></p>
+                    <div id="code-editor" style="height: 400px;"></div>
+                    <button id="submit-quest-btn" class="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-lg mt-4">
+                        Submit Solution
+                    </button>
+                    <button id="back-to-quests-btn" class="bg-gray-600 hover:bg-gray-700 px-6 py-3 rounded-lg mt-4 ml-4">
+                        Back to Quests
+                    </button>
+                </div>
             </div>
         </div>
     </main>

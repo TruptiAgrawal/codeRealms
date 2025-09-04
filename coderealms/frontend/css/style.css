@@ -88,3 +88,38 @@
 .theme-forest { background: linear-gradient(135deg, #065f46, #064e3b); }
 .theme-ocean { background: linear-gradient(135deg, #1e40af, #1e3a8a); }
 .theme-sunset { background: linear-gradient(135deg, #f59e0b, #f97316); }
+
+/* Achievements */
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.achievement {
+    background-color: #374151;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    text-align: center;
+    transition: transform 0.2s ease-in-out;
+}
+
+.achievement:hover {
+    transform: translateY(-5px);
+}
+
+.achievement img {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 0.5rem;
+}
+
+.achievement .name {
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+}
+
+.achievement .description {
+    font-size: 0.875rem;
+    color: #9ca3af;
+}
