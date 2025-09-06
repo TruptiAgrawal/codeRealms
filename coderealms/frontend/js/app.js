@@ -126,6 +126,13 @@ class CodeRealmsApp {
         }
 
         const response = await fetch(this.apiBase + endpoint, config);
+
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            const text = await response.text();
+            throw new Error(`API call failed: Expected JSON, got HTML/text: ${text}`);
+        }
+
         const result = await response.json();
 
         if (!response.ok) {

@@ -1,0 +1,24 @@
+## Log: Unexpected Token Error
+
+**What I did:**
+
+1.  **Initial Diagnosis:** The user reported a "Unexpected token '<'" error. I identified that this was due to the frontend receiving an HTML response instead of a JSON response.
+2.  **Frontend Patch:** I patched the `apiCall` function in `app.js` to provide a more informative error message. This helped to confirm that the backend was sending an HTML 404 page.
+3.  **Backend Investigation:** I investigated the backend code, including `server.js`, `routes/users.js`, `middleware/auth.js`, and `controllers/gameController.js`. I identified that the `bcryptjs` package was outdated and could be the cause of the problem.
+4.  **Dependency Update:** I updated the `bcryptjs` package in `package.json` and ran `npm install`.
+5.  **Server Restart:** I attempted to restart the server multiple times, but the user cancelled the operation.
+6.  **Port Conflict:** I investigated a potential port conflict using `netstat` and `tasklist`.
+
+**Why I did it:**
+
+*   I patched the frontend to get a better error message, which helped to narrow down the problem.
+*   I investigated the backend code to find the root cause of the error.
+*   I updated the `bcryptjs` package because the outdated version had a known issue that could cause the error.
+*   I attempted to restart the server to apply the changes.
+*   I checked for a port conflict as a possible cause of the server not responding correctly.
+
+**What could have been done better:**
+
+*   **User Communication:** I should have been more explicit about the need to restart the server. After updating the `bcryptjs` package, I should have explained that a restart was necessary to apply the fix.
+*   **Error Interpretation:** When the user provided the "404 The requested path could not be found" error, I should have immediately suspected that the server was not running the latest code, instead of re-investigating the code.
+*   **Conciseness:** My thought process could have been more concise.
