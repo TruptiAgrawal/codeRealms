@@ -11,7 +11,7 @@ class CodeRealmsApp {
         this.avatars = [
             { id: 'warrior', name: 'Warrior', icon: '⚔️' },
             { id: 'mage', name: 'Mage', icon: '🧙‍♂️' },
-            { id: 'hacker', name: 'Hacker', icon: '👨‍💻' },
+            { id: 'hacker', name: 'Hacker', icon: '👨\u200d💻' },
             { id: 'rogue', name: 'Rogue', icon: '🥷' },
             { id: 'scientist', name: 'Scientist', icon: '🔬' },
             { id: 'ai-engineer', name: 'AI Engineer', icon: '🤖' }
@@ -179,8 +179,10 @@ class CodeRealmsApp {
             this.loadLeaderboard();
         } else if (viewName === 'profile') {
             this.loadProfile();
-        } else if (viewName === 'quest') {
-            this.loadQuests();
+        } else if (viewName === 'module-selection') {
+            this.loadModules();
+        } else if (viewName === 'level-content') {
+            // This view is now loaded via loadLevelContent
         }
     }
 
@@ -221,9 +223,7 @@ class CodeRealmsApp {
         
         this.avatars.forEach(avatar => {
             const avatarDiv = document.createElement('div');
-            avatarDiv.className = `avatar-option bg-gray-700 p-4 rounded-lg text-center ${
-                this.currentUser.avatar === avatar.id ? 'selected' : ''
-            }`;
+            avatarDiv.className = `avatar-option bg-gray-700 p-4 rounded-lg text-center ${this.currentUser.avatar === avatar.id ? 'selected' : ''}`;
             avatarDiv.innerHTML = `
                 <div class="text-3xl mb-2">${avatar.icon}</div>
                 <div class="text-sm">${avatar.name}</div>
@@ -238,9 +238,7 @@ class CodeRealmsApp {
         
         this.themes.forEach(theme => {
             const themeDiv = document.createElement('div');
-            themeDiv.className = `theme-option ${theme.class} rounded-lg ${
-                this.currentUser.theme === theme.id ? 'selected' : ''
-            }`;
+            themeDiv.className = `theme-option ${theme.class} rounded-lg ${this.currentUser.theme === theme.id ? 'selected' : ''}`;
             themeDiv.innerHTML = `<span class="font-bold">${theme.name}</span>`;
             themeDiv.addEventListener('click', (event) => this.selectTheme(event, theme.id));
             themeContainer.appendChild(themeDiv);
@@ -310,11 +308,7 @@ class CodeRealmsApp {
             container.innerHTML = response.leaderboard.map((user, index) => `
                 <div class="leaderboard-entry bg-gray-700 p-4 rounded-lg flex items-center justify-between">
                     <div class="flex items-center space-x-4">
-                        <div class="text-2xl font-bold ${
-                            index === 0 ? 'text-yellow-400' : 
-                            index === 1 ? 'text-gray-400' : 
-                            index === 2 ? 'text-orange-400' : 'text-gray-500'
-                        }">
+                        <div class="text-2xl font-bold ${index === 0 ? 'text-yellow-400' : index === 1 ? 'text-gray-400' : index === 2 ? 'text-orange-400' : 'text-gray-500'}">
                             #${user.rank}
                         </div>
                         <div class="text-2xl">${this.avatars.find(a => a.id === user.avatar)?.icon || '⚔️'}</div>
@@ -334,48 +328,97 @@ class CodeRealmsApp {
         }
     }
 
-    async loadQuests() {
+    async loadModules() {
         try {
-            const response = await this.apiCall('/quests', 'GET');
-            const container = document.getElementById('quest-list');
-            container.innerHTML = '';
+            // This is a mock response. Replace with actual API call when ready.
+            const response = {
+                modules: [
+                    { id: 1, name: 'Arrays', description: 'Master array data structures and operations' },
+                    { id: 2, name: 'Strings', description: 'Learn string manipulation and algorithms' }
+                ]
+            };
+            // const response = await this.apiCall('/modules', 'GET'); 
+            const container = document.getElementById('module-list');
+            container.innerHTML = ''; // Clear previous content
 
-            if (response.data && response.data.length > 0) {
-                response.data.forEach(quest => {
-                    const questCard = document.createElement('div');
-                    questCard.className = 'bg-gray-700 p-6 rounded-lg cursor-pointer hover:bg-gray-600';
-                    questCard.innerHTML = `
-                        <h3 class="text-xl font-bold mb-2">${quest.title}</h3>
-                        <p class="text-gray-400 mb-4">${quest.description}</p>
-                        <div class="flex justify-between items-center">
-                            <span class="text-sm font-bold text-yellow-400">${quest.xpReward} XP</span>
-                            <span class="text-sm capitalize ${quest.difficulty === 'easy' ? 'text-green-400' : quest.difficulty === 'medium' ? 'text-orange-400' : 'text-red-400'}">
-                                ${quest.difficulty}
-                            </span>
-                        </div>
-                    `;
-                    questCard.addEventListener('click', () => this.showQuestDetails(quest));
-                    container.appendChild(questCard);
-                });
-            }
+            response.modules.forEach(module => {
+                const moduleCard = document.createElement('div');
+                moduleCard.className = 'bg-gray-700 p-6 rounded-lg cursor-pointer hover:bg-gray-600';
+                moduleCard.innerHTML = `
+                    <h3 class="text-xl font-bold mb-2">${module.name}</h3>
+                    <p class="text-gray-400">${module.description}</p>
+                `;
+                moduleCard.addEventListener('click', () => this.loadLevels(module.id, module.name));
+                container.appendChild(moduleCard);
+            });
         } catch (error) {
-            this.showMessage('Failed to load quests', 'error');
+            this.showMessage('Failed to load modules', 'error');
         }
     }
 
-    showQuestDetails(quest) {
-        this.currentQuest = quest;
-        document.getElementById('quest-list').classList.add('hidden');
-        document.getElementById('quest-details').classList.remove('hidden');
-        document.getElementById('quest-title').textContent = quest.title;
-        document.getElementById('quest-description').textContent = quest.description;
+    async loadLevels(moduleId, moduleName) {
+        this.showView('level-selection');
+        document.getElementById('level-selection-title').textContent = `Levels for ${moduleName}`;
+        try {
+            // This is a mock response. Replace with actual API call when ready.
+            const response = {
+                levels: [
+                    { id: 1, title: 'Array Basics', xpReward: 25, status: 'available' },
+                    { id: 2, title: 'Array Operations', xpReward: 30, status: 'locked' },
+                ]
+            };
+            // const response = await this.apiCall(`/modules/${moduleId}/levels`, 'GET');
+            const container = document.getElementById('level-list');
+            container.innerHTML = '';
 
-        if (!this.editor) {
-            this.editor = ace.edit("code-editor");
-            this.editor.setTheme("ace/theme/monokai");
-            this.editor.session.setMode("ace/mode/javascript");
+            response.levels.forEach(level => {
+                const levelCard = document.createElement('div');
+                levelCard.className = `bg-gray-700 p-6 rounded-lg ${level.status !== 'locked' ? 'cursor-pointer hover:bg-gray-600' : 'opacity-50'}`;
+                levelCard.innerHTML = `
+                    <h3 class="text-xl font-bold mb-2">${level.title}</h3>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-bold text-yellow-400">${level.xpReward} XP</span>
+                        <span class="text-sm capitalize ${level.status === 'completed' ? 'text-green-400' : 'text-gray-400'}">${level.status}</span>
+                    </div>
+                `;
+                if (level.status !== 'locked') {
+                    levelCard.addEventListener('click', () => this.loadLevelContent(level.id));
+                }
+                container.appendChild(levelCard);
+            });
+        } catch (error) {
+            this.showMessage('Failed to load levels', 'error');
         }
-        this.editor.setValue(quest.codeTemplate || '', -1);
+    }
+
+    async loadLevelContent(levelId) {
+        this.showView('level-content-view');
+        try {
+            // This is a mock response. Replace with actual API call when ready.
+            const quest = {
+                _id: levelId,
+                title: 'Array Basics Challenge',
+                description: 'Complete the function to return the first element of the array.',
+                codeTemplate: 'function getFirstElement(arr) {\n  // Your code here\n}'
+            };
+            // const quest = await this.apiCall(`/levels/${levelId}/content`, 'GET');
+            
+            this.currentQuest = quest;
+            document.getElementById('quest-list').classList.add('hidden');
+            document.getElementById('quest-details').classList.remove('hidden');
+            document.getElementById('quest-title').textContent = quest.title;
+            document.getElementById('quest-description').textContent = quest.description;
+
+            if (!this.editor) {
+                this.editor = ace.edit("code-editor");
+                this.editor.setTheme("ace/theme/monokai");
+                this.editor.session.setMode("ace/mode/javascript");
+            }
+            this.editor.setValue(quest.codeTemplate || '', -1);
+
+        } catch (error) {
+            this.showMessage('Failed to load level content.', 'error');
+        }
     }
 
     async submitQuest() {
@@ -446,14 +489,19 @@ class CodeRealmsApp {
 
         // Navigation
         document.getElementById('logout-btn').addEventListener('click', () => this.logout());
-        document.getElementById('start-quest-btn').addEventListener('click', () => this.showView('quest'));
+        document.getElementById('start-quest-btn').addEventListener('click', () => this.showView('module-selection'));
         document.getElementById('view-profile-btn').addEventListener('click', () => this.showView('profile'));
         document.getElementById('leaderboard-btn').addEventListener('click', () => this.showView('leaderboard'));
+        
+        // Back Buttons
         document.getElementById('back-dashboard-btn').addEventListener('click', () => this.showView('dashboard'));
         document.getElementById('back-from-leaderboard-btn').addEventListener('click', () => this.showView('dashboard'));
+        document.getElementById('back-to-dashboard-from-modules-btn').addEventListener('click', () => this.showView('dashboard'));
+        document.getElementById('back-to-modules-btn').addEventListener('click', () => this.showView('module-selection'));
+
         document.getElementById('back-to-quests-btn').addEventListener('click', () => {
-            document.getElementById('quest-details').classList.add('hidden');
-            document.getElementById('quest-list').classList.remove('hidden');
+            // This should now go back to the level selection view
+            this.showView('level-selection');
         });
         
         // Profile actions

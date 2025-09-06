@@ -148,8 +148,34 @@
                 </button>
             </div>
         </div>
-    <!-- Quest View -->
-        <div id="quest-view" class="container mx-auto px-6 py-8 hidden">
+    <!-- Module Selection View (New) -->
+        <div id="module-selection-view" class="container mx-auto px-6 py-8 hidden">
+            <div class="bg-gray-800 rounded-lg p-8">
+                <h2 class="text-3xl font-bold mb-6">Select a Module</h2>
+                <div id="module-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Module cards will be populated by JavaScript -->
+                </div>
+                <button id="back-to-dashboard-from-modules-btn" class="bg-gray-600 hover:bg-gray-700 px-6 py-3 rounded-lg mt-6">
+                    Back to Dashboard
+                </button>
+            </div>
+        </div>
+
+        <!-- Level Selection View (New) -->
+        <div id="level-selection-view" class="container mx-auto px-6 py-8 hidden">
+            <div class="bg-gray-800 rounded-lg p-8">
+                <h2 id="level-selection-title" class="text-3xl font-bold mb-6">Select a Level</h2>
+                <div id="level-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Level cards will be populated by JavaScript -->
+                </div>
+                <button id="back-to-modules-btn" class="bg-gray-600 hover:bg-gray-700 px-6 py-3 rounded-lg mt-6">
+                    Back to Modules
+                </button>
+            </div>
+        </div>
+
+    <!-- Level Content View (Previously Quest View) -->
+        <div id="level-content-view" class="container mx-auto px-6 py-8 hidden">
             <div class="bg-gray-800 rounded-lg p-8">
                 <h2 class="text-3xl font-bold mb-6">Quests</h2>
                 <div id="quest-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
